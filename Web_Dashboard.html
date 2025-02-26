@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microplastic Detection Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        table {
+            width: 80%;
+            margin: auto;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Microplastic Detection Dashboard</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Microplastic Type</th>
+                <th>Concentration (ppm)</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+
+    <canvas id="chartCanvas" width="400" height="200"></canvas>
+
+    <script>
+        var socket = io.connect(window.location.origin);
+        var ctx = document.getElementById('chartCanvas').getContext('2d');
+        var chartData = {
+            labels: [],
+            datasets: [{
+                label: 'Microplastic Concentration (ppm)',
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                data: []
+            }]
+        };
+
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        socket.on('update_data', function(data) {
+            var tableBody = document.getElementById('data-table');
+            tableBody.innerHTML = '';
+            chartData.labels = [];
+            chartData.datasets[0].data = [];
+
+            data.forEach(function(item) {
+                var row = `<tr><td>${item.microplastic}</td><td>${item.concentration}</td></tr>`;
+                tableBody.innerHTML += row;
+
+                chartData.labels.push(item.microplastic);
+                chartData.datasets[0].data.push(item.concentration);
+            });
+
+            myChart.update();
+        });
+    </script>
+</body>
+</html>
